@@ -4,6 +4,13 @@ The extension for chatting with Pulumi AI using VS Code's [Copilot Chat](https:/
 
 _Note_: this extension is in public beta. If you have suggestions for features or find bugs, please open an issue.
 
+## System Requirements
+
+- [Visual Studio Code Insiders](https://code.visualstudio.com/insiders/) (v1.88.0+)
+
+_Note_: this extension relies on a [Proposed API](https://code.visualstudio.com/api/advanced-topics/using-proposed-api) that is only available in the [Insiders](https://code.visualstudio.com/insiders/) build.
+Insiders installs next to the Stable build, allowing you to use either independently.
+
 ## Features
 
 - A `@pulumi` chat participant for chatting with Pulumi AI.
@@ -38,3 +45,6 @@ Click "Create Workspace" to proceed to create a Pulumi project into a new folder
 
 See the [Releases section](https://github.com/pulumi/pulumi-vscode-copilot/releases) for latest release information.
 
+# Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
