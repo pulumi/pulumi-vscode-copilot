@@ -98,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const response = await chat.sendPrompt({
 				connectionId: chatState?.connectionId || "",
 				conversationId: chatState?.conversationId || "",
-				responseMode: 'explain',
+				responseMode: 'balanced',
 				model: "gpt-4-turbo",
 				instructions: request.prompt,
 				language: 'TypeScript',
