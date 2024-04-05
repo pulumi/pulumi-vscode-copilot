@@ -1,0 +1,76 @@
+{
+  "name": "pulumi-vscode-copilot",
+  "publisher": "pulumi",
+  "displayName": "pulumi-vscode-copilot",
+  "description": "Pulumi Copilot",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "extensionDependencies": [
+    "github.copilot-chat",
+    "arcanis.vscode-zipfs"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "enabledApiProposals": [
+    "chatParticipant",
+    "chatVariableResolver",
+    "languageModels"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "pulumi-vscode-copilot.pulumipus",
+        "name": "pulumi",
+        "description": "What cloud infrastructure would you like to build?",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "new",
+            "description": "Create a new Pulumi program"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "pulumi-vscode-copilot.createProject",
+        "title": "Pulumi AI: Create Project"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.3",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.87.0",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "@vscode/test-electron": "^2.3.6",
+    "eslint": "^8.52.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@types/tmp": "^0.2.6",
+    "@types/unzipper": "^0.10.9",
+    "@yarnpkg/fslib": "^3.0.2",
+    "@yarnpkg/libzip": "^3.0.1",
+    "ai": "^3.0.18",
+    "javascript-petname": "^1.2.0",
+    "tmp": "^0.2.3",
+    "unzipper": "^0.10.14"
+  }
+}
