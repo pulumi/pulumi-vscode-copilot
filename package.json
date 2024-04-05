@@ -71,6 +71,8 @@
     "ai": "^3.0.18",
     "javascript-petname": "^1.2.0",
     "tmp": "^0.2.3",
-    "unzipper": "^0.10.14"
+    "unzipper": "^0.10.14",
+    "winston": "^3.13.0",
+    "winston-transport-vscode": "^0.1.0"
   }
 }

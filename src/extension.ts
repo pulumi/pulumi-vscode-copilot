@@ -2,10 +2,12 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as chat from './chat';
-import { VirtualFS, PosixFS, NodeFS } from '@yarnpkg/fslib';
+import { VirtualFS, PosixFS } from '@yarnpkg/fslib';
 import { ZipOpenFS } from '@yarnpkg/libzip';
 import { generatePetname } from 'javascript-petname';
 import * as fs from "fs";
+import * as winston from 'winston';
+import { LogOutputChannelTransport } from 'winston-transport-vscode';
 
 const PULUMIPUS_PARTICIPANT_ID = 'pulumi-vscode-copilot.pulumipus';
 const CREATE_PROJECT_COMMAND_ID = 'pulumi-vscode-copilot.createProject';
@@ -18,23 +20,22 @@ interface IPulumiChatResult extends vscode.ChatResult {
 	}
 }
 
-const zipFS = new PosixFS(
-	new VirtualFS({
-		baseFs: new ZipOpenFS({
-			useCache: true,
-			maxOpenFiles: 80,
-		}),
-	}),
-);
-
-const localFS = new NodeFS();
-
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-	// TODO: define a fs handler for the downloaded template
-	// https://github.com/TomasHubelbauer/vscode-zip-file-system/blob/main/src/extension.ts
+	// Configure logging.
+	const logChannel = vscode.window.createOutputChannel('Pulumi AI', {
+		log: true,
+	});
+	context.subscriptions.push(logChannel);
+	const logger = winston.createLogger({
+		level: 'trace',
+		exitOnError: false,
+		levels: LogOutputChannelTransport.config.levels,
+		format: LogOutputChannelTransport.format(),
+		transports: [new LogOutputChannelTransport({ outputChannel: logChannel })],
+	});
 
 	// Define a Pulumi chat handler. 
 	const handler: vscode.ChatRequestHandler = async (request: vscode.ChatRequest, context: vscode.ChatContext, stream: vscode.ChatResponseStream, token: vscode.CancellationToken): Promise<IPulumiChatResult> => {
@@ -45,6 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 			// Send prompt to Pulumi AI
 			if (request.prompt !== '') {
 				stream.progress('Asking Pulumi AI...');
+				logger.info(`Sending a request to Pulumi AI`, { prompt: request.prompt, conversationId: chatState?.conversationId });
 				const response = await chat.sendPrompt({
 					connectionId: chatState?.connectionId || "",
 					conversationId: chatState?.conversationId || "",
@@ -53,6 +55,8 @@ export function activate(context: vscode.ExtensionContext) {
 					instructions: request.prompt,
 					language: 'TypeScript',
 				});
+				logger.info(`Got a response from Pulumi AI`, { conversationId: response.conversationId });
+
 				for await (const fragment of response.text) {
 					stream.push(new vscode.ChatResponseMarkdownPart(fragment));
 				}
@@ -70,6 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
 			stream.progress('Downloading results...');
 			const archivePath = await chat.downloadToFile({ conversationId: chatState.conversationId });
 			const archiveUri = vscode.Uri.file(archivePath);
+			logger.info(`Downloaded a project template`, { conversationId: chatState.conversationId, path: archivePath });
 
 			stream.markdown(`Here's a Pulumi project template to help you get started: `);
 			stream.anchor(vscode.Uri.file(archivePath), 'template.zip');
@@ -95,6 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
 		} else {
 			// Send prompt to Pulumi AI
 			stream.progress('Asking Pulumi AI...');
+			logger.info(`Sending a request to Pulumi AI`, { prompt: request.prompt, conversationId: chatState?.conversationId });
 			const response = await chat.sendPrompt({
 				connectionId: chatState?.connectionId || "",
 				conversationId: chatState?.conversationId || "",
@@ -103,6 +109,8 @@ export function activate(context: vscode.ExtensionContext) {
 				instructions: request.prompt,
 				language: 'TypeScript',
 			});
+			logger.info(`Got a response from Pulumi AI`, { conversationId: response.conversationId });
+
 			for await (const fragment of response.text) {
 				stream.push(new vscode.ChatResponseMarkdownPart(fragment));
 			}
@@ -140,6 +148,7 @@ export function activate(context: vscode.ExtensionContext) {
 	};
 	context.subscriptions.push(pulumipus);
 
+	// Define a command to create a new Pulumi project from a template URL.
 	context.subscriptions.push(vscode.commands.registerCommand(CREATE_PROJECT_COMMAND_ID, async (templateUri: vscode.Uri) => {
 
 		const projectName = await vscode.window.showInputBox({
@@ -177,8 +186,7 @@ export function activate(context: vscode.ExtensionContext) {
 		terminal.sendText(cmd, true);
 
 		// open the new workspace in a new window
-		// const workspaceFolder = await vscode.workspace.updateWorkspaceFolders(openFolder(archiveUri);
-		vscode.commands.executeCommand('vscode.openFolder', workspaceUri, {forceNewWindow: true});
+		vscode.commands.executeCommand('vscode.openFolder', workspaceUri, { forceNewWindow: true });
 		await vscode.window.showInformationMessage(`The workspace was created.`);
 	}));
 }
@@ -206,6 +214,15 @@ function getChatState(history: ReadonlyArray<vscode.ChatRequestTurn | vscode.Cha
 	};
 }
 
+const zipFS = new PosixFS(
+	new VirtualFS({
+		baseFs: new ZipOpenFS({
+			useCache: true,
+			maxOpenFiles: 80,
+		}),
+	}),
+);
+
 // generateFileTree generates a filetree visualization of the archive.
 // similar to: https://github.com/microsoft/vscode-copilot-release/issues/1096
 async function generateFileTree(fileUri: vscode.Uri, stream: vscode.ChatResponseStream): Promise<void> {
@@ -229,17 +246,3 @@ async function generateFileTree(fileUri: vscode.Uri, stream: vscode.ChatResponse
 	const tree = await walk(zipUri);
 	stream.filetree(tree, zipUri);
 }
-
-// async function extractZip(zipUri: vscode.Uri): Promise<vscode.Uri> {
-//     const zipDir = tmp.dirSync({ unsafeCleanup: true });
-// 	// await zipFS.copyPromise(zipDir.name, from.fsPath, {
-// 	// 	baseFs: localFS,
-// 	// });
-// 	const to = fslib.npath.toPortablePath(zipDir.name + "/");
-// 	const from = zipUri.fsPath;
-// 	// const from = vscode.Uri.joinPath(zipUri, "/").fsPath;
-// 	await localFS.copyPromise(to, from, {
-// 		baseFs: zipFS,
-// 	});
-// 	return vscode.Uri.file(zipDir.name);
-// }
