@@ -1,71 +1,40 @@
-# pulumi-vscode-copilot README
+# Visual Studio Code Copilot Chat Extension
 
-This is the README for your extension "pulumi-vscode-copilot". After writing up a brief description, we recommend including the following sections.
+The extension for chatting with Pulumi AI using VS Code's [Copilot Chat](https://code.visualstudio.com/docs/copilot/copilot-chat) experience.
+
+_Note_: this extension is in public beta. If you have suggestions for features or find bugs, please open an issue.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- A `@pulumi` chat participant for chatting with Pulumi AI.
+- A `/new` command to create Pulumi projects based on a conversation.
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+https://github.com/pulumi/pulumi-vscode-copilot/assets/1775518/7026776d-f057-4aa4-af99-8d91b52586e8
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+This extension requires [GitHub Copilot](https://github.com/features/copilot?editor=vscode). To access GitHub Copilot, an active GitHub Copilot license is required. You can read more about GitHub's business and individual offerings at [github.com/features/copilot](https://github.com/features/copilot).
+
+## Getting Started
+
+### Open the Chat View
+
+Open the chat view and start a conversation with the `@pulumi` chat participant. Ask a question like "@pulumi What is Pulumi?".
+
+### Create a Project
+
+Use the `@pulumi /new` chat command to generate a new Pulumi project based on the conversation. Pulumi responds with a file tree showing
+a preview of the project. Feel free to refine the program with follow-ups directed to `@pulumi`.
+
+Click "Create Workspace" to proceed to create a Pulumi project into a new folder with the given name. Pulumi opens a new window for the project.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- The extension uses TypeScript as the language for generated code.
 
-## Release Notes
+## Releases
 
-Users appreciate release notes as you update your extension.
+See the [Releases section](https://github.com/pulumi/pulumi-vscode-copilot/releases) for latest release information.
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
