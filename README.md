@@ -45,6 +45,6 @@ Click "Create Workspace" to proceed to create a Pulumi project into a new folder
 
 See the [Releases section](https://github.com/pulumi/pulumi-vscode-copilot/releases) for latest release information.
 
-# Contributing
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
