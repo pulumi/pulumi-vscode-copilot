@@ -24,6 +24,11 @@ This extension requires [GitHub Copilot](https://github.com/features/copilot?edi
 
 ## Getting Started
 
+### Build and Run The Extension
+
+This extension is not yet published and must be built from source. See [CONTRIBUTING.md#running-the-extension](CONTRIBUTING.md#running-the-extension).
+
+
 ### Open the Chat View
 
 Open the chat view and start a conversation with the `@pulumi` chat participant. Ask a question like "@pulumi What is Pulumi?".
