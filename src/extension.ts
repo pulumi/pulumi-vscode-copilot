@@ -133,7 +133,6 @@ export function activate(context: vscode.ExtensionContext) {
 		light: vscode.Uri.joinPath(context.extensionUri, 'avatar-on-white.png'),
 		dark: vscode.Uri.joinPath(context.extensionUri, 'avatar-on-black.png')
 	};
-	pulumipus.sampleRequest = 'I want a static website on AWS behind a CloudFront CDN';
 	pulumipus.followupProvider = {
 		provideFollowups(result: IPulumiChatResult, context: vscode.ChatContext, token: vscode.CancellationToken) {
 			if (result.metadata.command === 'new') {

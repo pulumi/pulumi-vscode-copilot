@@ -39,7 +39,7 @@ export async function sendPrompt(request: ChatRequest): Promise<ChatResponse> {
     });
 
     if (!response.ok) {
-        throw new Error('todo');
+        throw new Error('Pulumi Copilot API is unavailable.');
     }
 
     const versionId = response.headers.get("x-version-id");
