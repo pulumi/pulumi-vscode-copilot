@@ -8,8 +8,7 @@
     "vscode": "^1.88.0"
   },
   "extensionDependencies": [
-    "github.copilot-chat",
-    "arcanis.vscode-zipfs"
+    "github.copilot-chat"
   ],
   "categories": [
     "Other"
@@ -22,20 +21,16 @@
         "id": "pulumi-vscode-copilot.pulumipus",
         "fullName": "Pulumi Copilot",
         "name": "pulumi",
-        "description": "What cloud infrastructure would you like to build?",
+        "description": "Example: a static website on AWS behind a CDN.",
         "isSticky": true,
         "commands": [
-          {
-            "name": "new",
-            "description": "Create a new Pulumi program"
-          }
         ]
       }
     ],
     "commands": [
       {
         "command": "pulumi-vscode-copilot.createProject",
-        "title": "Pulumi AI: Create Project"
+        "title": "Pulumi Copilot: Create Project"
       }
     ]
   },

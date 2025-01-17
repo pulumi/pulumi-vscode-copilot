@@ -2,8 +2,6 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as chat from './chat';
-import { VirtualFS, PosixFS } from '@yarnpkg/fslib';
-import { ZipOpenFS } from '@yarnpkg/libzip';
 import { generatePetname } from 'javascript-petname';
 import * as fs from "fs";
 import * as winston from 'winston';
@@ -16,7 +14,6 @@ interface IPulumiChatResult extends vscode.ChatResult {
 	metadata: {
 		command?: string;
 		conversationId: string,
-		connectionId: string,
 	}
 }
 
@@ -25,7 +22,7 @@ interface IPulumiChatResult extends vscode.ChatResult {
 export function activate(context: vscode.ExtensionContext) {
 
 	// Configure logging.
-	const logChannel = vscode.window.createOutputChannel('Pulumi AI', {
+	const logChannel = vscode.window.createOutputChannel('Pulumi Copilot', {
 		log: true,
 	});
 	context.subscriptions.push(logChannel);
@@ -37,92 +34,59 @@ export function activate(context: vscode.ExtensionContext) {
 		transports: [new LogOutputChannelTransport({ outputChannel: logChannel })],
 	});
 
+	const userAgent = `pulumi-vscode-copilot/${context.extension.packageJSON.version}`;
+	
+	const settings = vscode.workspace.getConfiguration('pulumi');
+	const accessToken = settings.get<string>('accessToken')!;
+
+	const client = new chat.Client('https://api.pulumi.com/api/ai/chat/preview', userAgent, accessToken);
+
 	// Define a Pulumi chat handler. 
 	const handler: vscode.ChatRequestHandler = async (request: vscode.ChatRequest, context: vscode.ChatContext, stream: vscode.ChatResponseStream, token: vscode.CancellationToken): Promise<IPulumiChatResult> => {
 
 		var chatState = getChatState(context.history);
 
-		if (request.command === 'new') {
-			// Send prompt to Pulumi AI
-			if (request.prompt !== '') {
-				stream.progress('Asking Pulumi AI...');
-				logger.info(`Sending a request to Pulumi AI`, { prompt: request.prompt, conversationId: chatState?.conversationId });
-				const response = await chat.sendPrompt({
-					connectionId: chatState?.connectionId || "",
-					conversationId: chatState?.conversationId || "",
-					responseMode: 'code',
-					model: "gpt-4-turbo",
-					instructions: request.prompt,
-					language: 'TypeScript',
-				});
-				logger.info(`Got a response from Pulumi AI`, { conversationId: response.conversationId });
+		// Send prompt to Pulumi Copilot
+		logger.info(`Sending a request to Pulumi Copilot REST API`, { prompt: request.prompt, conversationId: chatState?.conversationId });
+		
+		const response = await client.sendPrompt({
+			state: {
+				client: {
+					cloudContext: {
+					orgId: "pulumi",
+					url: "https://app.pulumi.com",
+					},
+				},
+			},
+			conversationId: chatState?.conversationId,
+			query: request.prompt ?? "Hello",
+		});
+		logger.info(`Got a response from Pulumi Copilot`, { conversationId: response.conversationId });
 
-				for await (const fragment of response.text) {
-					stream.push(new vscode.ChatResponseMarkdownPart(fragment));
-				}
-
-				chatState = {
-					conversationId: response.conversationId,
-					connectionId: response.connectionId,
-				};
-			} else if (!chatState) {
-				throw new Error('Please provide a prompt to create a new project');
+		for await (const msg of response.messages.filter(m => m.role === 'assistant')) {
+			switch(msg.kind) {
+				case 'response':
+					stream.push(new vscode.ChatResponseMarkdownPart(msg.content.toString()));
+					break;
+				case 'trace':
+					logger.info(msg.content);
+					break;
+				case 'status':
+					stream.progress(msg.content);
+					break;
+				case 'program':
+					const block = "```" + msg.content.language + "\n" + msg.content.code + "\n```";
+					stream.push(new vscode.ChatResponseMarkdownPart(block));
+					break;
 			}
-
-			// Download the generated project and respond with a file tree
-			// and the option to create a workspace.
-			stream.progress('Downloading results...');
-			const archivePath = await chat.downloadToFile({ conversationId: chatState.conversationId });
-			const archiveUri = vscode.Uri.file(archivePath);
-			logger.info(`Downloaded a project template`, { conversationId: chatState.conversationId, path: archivePath });
-
-			stream.markdown(`Here's a Pulumi project template to help you get started: `);
-			stream.anchor(vscode.Uri.file(archivePath), 'template.zip');
-
-			await generateFileTree(archiveUri, stream);
-
-			const templateUrl = chat.templateUrl(chatState.conversationId);
-			stream.button({
-				command: CREATE_PROJECT_COMMAND_ID,
-				title: vscode.l10n.t('Create Workspace'),
-				arguments: [templateUrl]
-			});
-			stream.markdown(`When you create the workspace, you'll be prompted for a project name and location.`);
-
-			return {
-				metadata: {
-					command: 'new',
-					connectionId: chatState.connectionId,
-					conversationId: chatState.conversationId,
-				}
-			};
-
-		} else {
-			// Send prompt to Pulumi AI
-			stream.progress('Asking Pulumi AI...');
-			logger.info(`Sending a request to Pulumi AI`, { prompt: request.prompt, conversationId: chatState?.conversationId });
-			const response = await chat.sendPrompt({
-				connectionId: chatState?.connectionId || "",
-				conversationId: chatState?.conversationId || "",
-				responseMode: 'balanced',
-				model: "gpt-4-turbo",
-				instructions: request.prompt,
-				language: 'TypeScript',
-			});
-			logger.info(`Got a response from Pulumi AI`, { conversationId: response.conversationId });
-
-			for await (const fragment of response.text) {
-				stream.push(new vscode.ChatResponseMarkdownPart(fragment));
-			}
-
-			return {
-				metadata: {
-					command: '',
-					connectionId: response.connectionId,
-					conversationId: response.conversationId,
-				}
-			};
 		}
+
+		return {
+			metadata: {
+				command: '',
+				conversationId: response.conversationId,
+			}
+		};
 	};
 
 	// Chat participants appear as top-level options in the chat input
@@ -135,7 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
 	};
 	pulumipus.followupProvider = {
 		provideFollowups(result: IPulumiChatResult, context: vscode.ChatContext, token: vscode.CancellationToken) {
-			if (result.metadata.command === 'new') {
+			if (result.metadata?.command === 'new') {
 				return [];
 			}
 			return [{
@@ -179,7 +143,7 @@ export function activate(context: vscode.ExtensionContext) {
 		fs.mkdirSync(workspaceUri.fsPath, { recursive: true });
 
 		// run `pulumi new` in a terminal
-		const terminal = vscode.window.createTerminal(`Pulumi AI`);
+		const terminal = vscode.window.createTerminal(`Pulumi Copilot`);
 		terminal.show(true);
 		const cmd = `pulumi new "${templateUri}" -y --name "${projectName}" --dir "${workspaceUri.fsPath}"`;
 		terminal.sendText(cmd, true);
@@ -195,7 +159,6 @@ export function deactivate() { }
 
 type ChatState = {
 	conversationId: string,
-	connectionId: string,
 };
 
 // getChatState recovers the chat state (conversation-id, connection-id) from the chat history
@@ -209,39 +172,5 @@ function getChatState(history: ReadonlyArray<vscode.ChatRequestTurn | vscode.Cha
 
 	return {
 		conversationId: lastResponse.result.metadata.conversationId,
-		connectionId: lastResponse.result.metadata.connectionId,
 	};
-}
-
-const zipFS = new PosixFS(
-	new VirtualFS({
-		baseFs: new ZipOpenFS({
-			useCache: true,
-			maxOpenFiles: 80,
-		}),
-	}),
-);
-
-// generateFileTree generates a filetree visualization of the archive.
-// similar to: https://github.com/microsoft/vscode-copilot-release/issues/1096
-async function generateFileTree(fileUri: vscode.Uri, stream: vscode.ChatResponseStream): Promise<void> {
-	async function walk(uri: vscode.Uri): Promise<vscode.ChatResponseFileTree[]> {
-		const listing = await zipFS.readdirPromise(uri.fsPath);
-		const nodes: vscode.ChatResponseFileTree[] = [];
-		for (const entry of listing) {
-			const entryUri = vscode.Uri.joinPath(uri, entry);
-			const entryStat = await zipFS.statPromise(entryUri.fsPath);
-			if (entryStat.isDirectory()) {
-				const entryChildren = await walk(entryUri);
-				nodes.push({ name: entry, children: entryChildren });
-			} else {
-				nodes.push({ name: entry });
-			}
-		}
-		return nodes;
-	}
-
-	const zipUri = vscode.Uri.parse(`zip:${fileUri.fsPath}`);
-	const tree = await walk(zipUri);
-	stream.filetree(tree, zipUri);
 }

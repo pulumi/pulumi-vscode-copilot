@@ -1,97 +1,89 @@
 
-import * as ai from "ai"; 
-import * as stream from "stream/promises";
-import * as fs from "fs";
-import * as tmp from "tmp";
-
-export type AvailableModels = "gpt-4" | "gpt-4-turbo" | string;
-
-export type PulumiLanguage = "TypeScript" | "JavaScript" | "Python" | "Go" | "C#" | "Java" | "YAML" | "Terraform" | string;
-
-export type ResponseMode = "explain" | "balanced" | "code";
-
-export type ChatRequest = {
-    connectionId: string,
-    conversationId: string,
-    model?: AvailableModels,
-    responseMode: ResponseMode,
-    instructions: string,
-    language: PulumiLanguage,
-    version?: string,
-};
-
-export type ChatResponse = {
-    text: AsyncGenerator<string>,
-    conversationId: string,
-    connectionId: string,
-    version: string,
-};
-
-export async function sendPrompt(request: ChatRequest): Promise<ChatResponse> {
-    const response = await fetch('https://www.pulumi.com/ai/api/chat', {
-        method: 'POST',
-        headers: {
-            'Cache-Control': 'no-cache',
-            'Content-Type': 'application/json',
-            'Cookie': `pulumi_web_user_info=j%3A%7B%22userId%22%3A%228246ca93-a5be-45d9-9eda-afba90e47f98%22%2C%22username%22%3A%22eron-pulumi-corp%22%7D`
-        },
-        body: JSON.stringify(request)
-    });
-
-    if (!response.ok) {
-        throw new Error('Pulumi Copilot API is unavailable.');
-    }
-
-    const versionId = response.headers.get("x-version-id");
-    const conversationId = response.headers.get("x-conversation-id");
-    const connectionId = response.headers.get("x-connection-id");
-
-    async function* responseStream() {
-        const reader = response.body!.getReader();
-        const decode = ai.createChunkDecoder();
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                break;
-            }
-            yield decode(value!);
-        }
-    }
-
-    return {
-        text: responseStream(),
-        version: versionId!,
-        conversationId: conversationId!,
-        connectionId: connectionId!,
+export interface State {
+  client: {
+    cloudContext: {
+      orgId: string;
+      url?: string;
     };
+  };
 }
 
-export type DownloadRequest = {
-    conversationId: string,
-};
-
-export function templateUrl(conversationId: string): string {
-    return `https://www.pulumi.com/ai/api/project/${conversationId}.zip`;
+export interface ChatRequest {
+  conversationId?: string;
+  query: string;
+  state: State;
 }
 
-export async function downloadToFile(request: DownloadRequest): Promise<string> {
-    const response = await fetch(templateUrl(request.conversationId), {
-        method: 'GET',
-        headers: {
-            'Cache-Control': 'no-cache',
-        },
-    });
-    if (!response.ok) {
-        throw new Error(response.statusText);
+export type StringArray = string[];
+
+export interface TraceMessage {
+    kind: "trace";
+    role: "assistant" | "user";
+    content: string;
+}
+  
+export interface ResponseMessage {
+    kind: "response";
+    role: "assistant" | "user";
+    content: string;
+}
+
+export interface StatusMessage {
+    kind: "status";
+    role: "assistant" | "user";
+    content: string;
+}
+
+export interface ProgramMessage {
+    kind: "program";
+    role: "assistant" | "user";
+    content: ProgramContent;
+}
+
+export interface ProgramContent {
+    code: string;
+    language: string;
+    plan: {
+      instructions: string;
+      searchTerms: string[];
+    };
+  }
+
+type Message = TraceMessage | ResponseMessage | StatusMessage | ProgramMessage;
+
+export interface ChatResponse {
+  conversationId: string;
+  messages: Message[];
+}
+
+export class Client {
+    private chatUrl: string;
+    private userAgent: string;
+    private token: string;
+
+    constructor(chatUrl: string, userAgent: string, accessToken: string) {
+        this.chatUrl = chatUrl;
+        this.userAgent = userAgent;
+        this.token = accessToken;
     }
+
+    async sendPrompt(request: ChatRequest): Promise<ChatResponse> {
+        const response = await fetch(this.chatUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `token ${this.token}`,
+                'User-Agent': this.userAgent,
+            },
+            body: JSON.stringify(request)
+        });
     
-    const zipFile = tmp.fileSync({ prefix: 'pulumi', postfix: '.zip' });
-    const zipStream = fs.createWriteStream(zipFile.name, {fd: zipFile.fd});
-    try {
-        await stream.pipeline(response.body!, zipStream);
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Pulumi Copilot API is unavailable (${response.statusText}).\n` + text);
+        }
+
+        return (await response.json()) as ChatResponse;
     }
-    finally {
-        zipStream.close();
-    }
-    return zipFile.name;
 }
+
