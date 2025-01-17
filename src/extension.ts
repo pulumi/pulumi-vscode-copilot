@@ -99,14 +99,15 @@ export function activate(context: vscode.ExtensionContext) {
 	};
 	pulumipus.followupProvider = {
 		provideFollowups(result: IPulumiChatResult, context: vscode.ChatContext, token: vscode.CancellationToken) {
-			if (result.metadata?.command === 'new') {
-				return [];
-			}
-			return [{
-				prompt: "",
-				label: vscode.l10n.t('Create a new Pulumi project'),
-				command: 'new'
-			} satisfies vscode.ChatFollowup];
+			return [];
+			// if (result.metadata?.command === 'new') {
+			// 	return [];
+			// }
+			// return [{
+			// 	prompt: "",
+			// 	label: vscode.l10n.t('Create a new Pulumi project'),
+			// 	command: 'new'
+			// } satisfies vscode.ChatFollowup];
 		}
 	};
 	context.subscriptions.push(pulumipus);

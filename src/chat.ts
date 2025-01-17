@@ -49,7 +49,7 @@ export interface ProgramContent {
     };
   }
 
-type Message = TraceMessage | ResponseMessage | StatusMessage | ProgramMessage;
+export type Message = TraceMessage | ResponseMessage | StatusMessage | ProgramMessage;
 
 export interface ChatResponse {
   conversationId: string;
