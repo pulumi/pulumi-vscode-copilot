@@ -63,10 +63,11 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 		logger.info(`Got a response from Pulumi Copilot`, { conversationId: response.conversationId });
 
+		// process each message
 		for await (const msg of response.messages.filter(m => m.role === 'assistant')) {
 			switch(msg.kind) {
 				case 'response':
-					stream.push(new vscode.ChatResponseMarkdownPart(msg.content.toString()));
+					stream.markdown(msg.content);
 					break;
 				case 'trace':
 					logger.info(msg.content);
@@ -76,7 +77,14 @@ export function activate(context: vscode.ExtensionContext) {
 					break;
 				case 'program':
 					const block = "```" + msg.content.language + "\n" + msg.content.code + "\n```";
-					stream.push(new vscode.ChatResponseMarkdownPart(block));
+					stream.markdown(block);
+
+					const templateUrl = chat.templateUrl(response.conversationId, msg.content);
+					stream.button({
+						command: CREATE_PROJECT_COMMAND_ID,
+						title: vscode.l10n.t('Create Project'),
+						arguments: [templateUrl]
+					});
 					break;
 			}
 		}
@@ -99,7 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
 	};
 	pulumipus.followupProvider = {
 		provideFollowups(result: IPulumiChatResult, context: vscode.ChatContext, token: vscode.CancellationToken) {
-			return [];
+				return [];
 			// if (result.metadata?.command === 'new') {
 			// 	return [];
 			// }

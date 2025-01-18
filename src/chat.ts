@@ -41,13 +41,14 @@ export interface ProgramMessage {
 }
 
 export interface ProgramContent {
-    code: string;
-    language: string;
-    plan: {
-      instructions: string;
-      searchTerms: string[];
-    };
-  }
+  code: string;
+  language: string;
+  plan: {
+    instructions: string;
+    searchTerms: string[];
+  };
+  templateUrl?: string;
+}
 
 export type Message = TraceMessage | ResponseMessage | StatusMessage | ProgramMessage;
 
@@ -83,7 +84,16 @@ export class Client {
             throw new Error(`Pulumi Copilot API is unavailable (${response.statusText}).\n` + text);
         }
 
-        return (await response.json()) as ChatResponse;
+        const json = await response.json();
+        return json as ChatResponse;
     }
 }
 
+export function templateUrl(conversationId: string, program: ProgramContent): string {
+  if(program.templateUrl) {
+    // e.g. `https://api.pulumi.com/api/orgs/pulumi/ai/conversations/eron-pulumi-corp/2e5289fe-d35e-4593-97b4-989aba35e629/programs/15AMOnD-0.zip`;
+    return program.templateUrl;
+  }
+  // a legacy URL for demo purposes
+  return `https://www.pulumi.com/ai/api/project/859bfc82-d039-4b24-ac02-751e3b4e22f6.zip`;
+}
