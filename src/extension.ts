@@ -36,10 +36,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const userAgent = `pulumi-vscode-copilot/${context.extension.packageJSON.version}`;
 	
-	const settings = vscode.workspace.getConfiguration('pulumi');
-	const accessToken = settings.get<string>('accessToken')!;
-
-	const client = new chat.Client('https://api.pulumi.com/api/ai/chat/preview', userAgent, accessToken);
+	const tokenProvider = async () => {
+		const session = await vscode.authentication.getSession("pulumi", [], { createIfNone: true });
+		return session?.accessToken;
+	};
+	const client = new chat.Client('https://api.pulumi.com/api/ai/chat/preview', userAgent, tokenProvider);
 
 	// Define a Pulumi chat handler. 
 	const handler: vscode.ChatRequestHandler = async (request: vscode.ChatRequest, context: vscode.ChatContext, stream: vscode.ChatResponseStream, token: vscode.CancellationToken): Promise<IPulumiChatResult> => {

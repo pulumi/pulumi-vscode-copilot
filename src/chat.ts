@@ -57,23 +57,33 @@ export interface ChatResponse {
   messages: Message[];
 }
 
+
+export type TokenProvider = () => Promise<string|undefined>;
+
+
 export class Client {
     private chatUrl: string;
     private userAgent: string;
-    private token: string;
+    private tokenProvider: TokenProvider;
 
-    constructor(chatUrl: string, userAgent: string, accessToken: string) {
+    constructor(chatUrl: string, userAgent: string, tokenProvider: TokenProvider) {
         this.chatUrl = chatUrl;
         this.userAgent = userAgent;
-        this.token = accessToken;
+        this.tokenProvider = tokenProvider;
     }
 
     async sendPrompt(request: ChatRequest): Promise<ChatResponse> {
+
+        const accessToken = await this.tokenProvider();
+        if (!accessToken) {
+          throw new Error(`Please login to Pulumi Cloud to use this feature.`);
+        }
+
         const response = await fetch(this.chatUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `token ${this.token}`,
+                'Authorization': `token ${accessToken}`,
                 'User-Agent': this.userAgent,
             },
             body: JSON.stringify(request)
