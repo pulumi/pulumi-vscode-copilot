@@ -1,3 +1,5 @@
+import winston from "winston";
+import * as vscode from 'vscode';
 
 export interface State {
   client: {
@@ -62,23 +64,26 @@ export type TokenProvider = () => Promise<string|undefined>;
 
 
 export class Client {
-    private chatUrl: string;
-    private userAgent: string;
-    private tokenProvider: TokenProvider;
+    private readonly chatUrl: string;
+    private readonly userAgent: string;
+    private readonly tokenProvider: TokenProvider;
+    private readonly logger: winston.Logger;
 
-    constructor(chatUrl: string, userAgent: string, tokenProvider: TokenProvider) {
+    constructor(chatUrl: string, userAgent: string, tokenProvider: TokenProvider, logger: winston.Logger) {
         this.chatUrl = chatUrl;
         this.userAgent = userAgent;
         this.tokenProvider = tokenProvider;
+        this.logger = logger;
     }
 
-    async sendPrompt(request: ChatRequest): Promise<ChatResponse> {
+    async sendPrompt(request: ChatRequest, token: vscode.CancellationToken): Promise<ChatResponse> {
 
+        this.logger.debug(`Getting a Pulumi access token`);
         const accessToken = await this.tokenProvider();
         if (!accessToken) {
           throw new Error(`Please login to Pulumi Cloud to use this feature.`);
         }
-
+        this.logger.debug(`Sending a chat request to Pulumi Copilot REST API`, { ...request });
         const response = await fetch(this.chatUrl, {
             method: 'POST',
             headers: {
@@ -91,11 +96,13 @@ export class Client {
     
         if (!response.ok) {
             const text = await response.text();
+            this.logger.error(`Received an error response`, { status: response.statusText, text: text });
             throw new Error(`Pulumi Copilot API is unavailable (${response.statusText}).\n` + text);
         }
 
-        const json = await response.json();
-        return json as ChatResponse;
+        const json = await response.json() as ChatResponse;
+        this.logger.debug(`Received a chat response`, { ...json });
+        return json;
     }
 }
 
