@@ -1,197 +1,221 @@
-import * as vscode from 'vscode';
-import axios from 'axios';
-import * as AxiosLogger from 'axios-logger';
+import * as vscode from "vscode";
+import axios from "axios";
+import * as AxiosLogger from "axios-logger";
 
 /// User API
 
 export interface User {
-    id: string;
-    name: string;
-    email: string;
-    githubLogin: string;
-    avatarUrl: string;
-    hasMFA: boolean;
-    organizations: OrganizationSummary[];
+  id: string;
+  name: string;
+  email: string;
+  githubLogin: string;
+  avatarUrl: string;
+  hasMFA: boolean;
+  organizations: OrganizationSummary[];
 }
 
 export interface OrganizationSummary {
-    githubLogin: string;
-    name: string;
-    avatarUrl: string;
+  githubLogin: string;
+  name: string;
+  avatarUrl: string;
 }
 
 /// Chat API
 
 export interface ChatRequest {
-	conversationId?: string;
-	query: string;
-	state: ChatRequestState;
+  conversationId?: string;
+  query: string;
+  state: ChatRequestState;
 }
 
 export interface ChatRequestState {
-	client: {
-		cloudContext: {
-			orgId: string;
-			url?: string;
-		};
-	};
+  client: {
+    cloudContext: {
+      orgId: string;
+      url?: string;
+    };
+  };
 }
 
 export type StringArray = string[];
 
 export interface TraceMessage {
-	kind: "trace";
-	role: "assistant" | "user";
-	content: string;
+  kind: "trace";
+  role: "assistant" | "user";
+  content: string;
 }
 
 export interface ResponseMessage {
-	kind: "response";
-	role: "assistant" | "user";
-	content: string;
+  kind: "response";
+  role: "assistant" | "user";
+  content: string;
 }
 
 export interface StatusMessage {
-	kind: "status";
-	role: "assistant" | "user";
-	content: string;
+  kind: "status";
+  role: "assistant" | "user";
+  content: string;
 }
 
 export interface ProgramMessage {
-	kind: "program";
-	role: "assistant" | "user";
-	content: ProgramContent;
+  kind: "program";
+  role: "assistant" | "user";
+  content: ProgramContent;
 }
 
 export interface ProgramContent {
-	code: string;
-	language: string;
-	plan: {
-		instructions: string;
-		searchTerms: string[];
-	};
-	templateUrl?: string;
+  code: string;
+  language: string;
+  plan: {
+    instructions: string;
+    searchTerms: string[];
+  };
+  templateUrl?: string;
 }
 
-export type Message = TraceMessage | ResponseMessage | StatusMessage | ProgramMessage;
+export type Message =
+  | TraceMessage
+  | ResponseMessage
+  | StatusMessage
+  | ProgramMessage;
 
 export interface ChatResponse {
-	conversationId: string;
-	messages: Message[];
+  conversationId: string;
+  messages: Message[];
 }
 
-/// API Client 
+/// API Client
 
 export type TokenProvider = () => Promise<AuthenticationToken | undefined>;
 
 export interface AuthenticationToken {
-	readonly accessToken: string;
+  readonly accessToken: string;
 }
 
 export interface AuthenticationTokenInvalidateOptions {
-	/**
-	 * An optional message that will be displayed to the user when we ask to re-authenticate. Providing additional context
-	 * as to why you are asking a user to re-authenticate can help increase the odds that they will accept.
-	 */
-	detail?: string;
+  /**
+   * An optional message that will be displayed to the user when we ask to re-authenticate. Providing additional context
+   * as to why you are asking a user to re-authenticate can help increase the odds that they will accept.
+   */
+  detail?: string;
 }
 
-
 export interface AuthenticationTokenProvider {
-	request(): Promise<AuthenticationToken | undefined>;
-	invalidate(opts?: AuthenticationTokenInvalidateOptions): void;
+  request(): Promise<AuthenticationToken | undefined>;
+  invalidate(opts?: AuthenticationTokenInvalidateOptions): void;
 }
 
 export class Client {
-	private readonly userAgent: string;
-	private readonly tokenProvider: AuthenticationTokenProvider;
-	private readonly instance: axios.AxiosInstance;
+  private readonly userAgent: string;
+  private readonly tokenProvider: AuthenticationTokenProvider;
+  private readonly instance: axios.AxiosInstance;
 
-	constructor(baseUrl: string, userAgent: string, tokenProvider: AuthenticationTokenProvider) {
-		this.userAgent = userAgent;
-		this.tokenProvider = tokenProvider;
+  constructor(
+    baseUrl: string,
+    userAgent: string,
+    tokenProvider: AuthenticationTokenProvider
+  ) {
+    this.userAgent = userAgent;
+    this.tokenProvider = tokenProvider;
 
-		this.instance = axios.create({
-			baseURL: baseUrl,
-			headers: {
-				"User-Agent": this.userAgent,
-				"X-Pulumi-Source": "vscode",
-			},
-		});
+    this.instance = axios.create({
+      baseURL: baseUrl,
+      headers: {
+        "User-Agent": this.userAgent,
+        "X-Pulumi-Source": "vscode",
+      },
+    });
 
-		// install interceptors to handle credentials and to log requests and responses
-		this.instance.interceptors.request.use(
-			async (config) => {
-				const accessToken = await this.tokenProvider.request();
-				if (!accessToken) {
-					throw new Error(`Please login to Pulumi Cloud to use this feature.`);
-				}
-				config.headers.Authorization = `token ${accessToken.accessToken}`;
-				return config;
-			},
-			(error) => {
-			  return Promise.reject(error);
-			}
-		);
-		this.instance.interceptors.request.use(AxiosLogger.requestLogger, AxiosLogger.errorLogger);
-		this.instance.interceptors.response.use(AxiosLogger.responseLogger, AxiosLogger.errorLogger);
-		this.instance.interceptors.response.use(async (config) => {
-			if (config.status === 401) {
-				this.tokenProvider.invalidate({
-					detail: "Your Pulumi access token was rejected. Please re-authenticate.",
-				});
-			}
-			return config;
-		},
-		(error) => {
-		  return Promise.reject(error);
-		});
-	}
+    // install interceptors to handle credentials and to log requests and responses
+    this.instance.interceptors.request.use(
+      async (config) => {
+        const accessToken = await this.tokenProvider.request();
+        if (!accessToken) {
+          throw new Error(`Please login to Pulumi Cloud to use this feature.`);
+        }
+        config.headers.Authorization = `token ${accessToken.accessToken}`;
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+    this.instance.interceptors.request.use(
+      AxiosLogger.requestLogger,
+      AxiosLogger.errorLogger
+    );
+    this.instance.interceptors.response.use(
+      AxiosLogger.responseLogger,
+      AxiosLogger.errorLogger
+    );
+    this.instance.interceptors.response.use(
+      async (config) => {
+        if (config.status === 401) {
+          this.tokenProvider.invalidate({
+            detail:
+              "Your Pulumi access token was rejected. Please re-authenticate.",
+          });
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+  }
 
-	async getUserInfo(token: vscode.CancellationToken): Promise<User> {
-		try {
-			const response = await this.instance.get<User>('/api/user', {
-				signal: tokenToSignal(token),
-			});
-			return response.data;
-		}
-		catch(err) {
-			if (!axios.isAxiosError(err)) {
-				throw err;
-			}
-			throw new Error(`Pulumi REST API is unavailable: ${err}.`);
-		}
-	}
+  async getUserInfo(token: vscode.CancellationToken): Promise<User> {
+    try {
+      const response = await this.instance.get<User>("/api/user", {
+        signal: tokenToSignal(token),
+      });
+      return response.data;
+    } catch (err) {
+      if (!axios.isAxiosError(err)) {
+        throw err;
+      }
+      throw new Error(`Pulumi REST API is unavailable: ${err}.`);
+    }
+  }
 
-	async sendPrompt(request: ChatRequest, token: vscode.CancellationToken): Promise<ChatResponse> {
-		try {
-			const response = await this.instance.post<ChatResponse>('/api/ai/chat/preview', request, {
-				signal: tokenToSignal(token),
-			});
-			return response.data;
-		}
-		catch(err) {
-			if (!axios.isAxiosError(err)) {
-				throw err;
-			}
-			throw new Error(`Pulumi REST API is unavailable: ${err}.`);
-		}
-	}
+  async sendPrompt(
+    request: ChatRequest,
+    token: vscode.CancellationToken
+  ): Promise<ChatResponse> {
+    try {
+      const response = await this.instance.post<ChatResponse>(
+        "/api/ai/chat/preview",
+        request,
+        {
+          signal: tokenToSignal(token),
+        }
+      );
+      return response.data;
+    } catch (err) {
+      if (!axios.isAxiosError(err)) {
+        throw err;
+      }
+      throw new Error(`Pulumi REST API is unavailable: ${err}.`);
+    }
+  }
 }
 
-export function templateUrl(conversationId: string, program: ProgramContent): string {
-	if (program.templateUrl) {
-		// e.g. `https://api.pulumi.com/api/orgs/pulumi/ai/conversations/eron-pulumi-corp/2e5289fe-d35e-4593-97b4-989aba35e629/programs/15AMOnD-0.zip`;
-		return program.templateUrl;
-	}
-	// a legacy URL for demo purposes
-	return `https://www.pulumi.com/ai/api/project/859bfc82-d039-4b24-ac02-751e3b4e22f6.zip`;
+export function templateUrl(
+  conversationId: string,
+  program: ProgramContent
+): string {
+  if (program.templateUrl) {
+    // e.g. `https://api.pulumi.com/api/orgs/pulumi/ai/conversations/eron-pulumi-corp/2e5289fe-d35e-4593-97b4-989aba35e629/programs/15AMOnD-0.zip`;
+    return program.templateUrl;
+  }
+  // a legacy URL for demo purposes
+  return `https://www.pulumi.com/ai/api/project/859bfc82-d039-4b24-ac02-751e3b4e22f6.zip`;
 }
 
 function tokenToSignal(token: vscode.CancellationToken): AbortSignal {
-	const abortController = new AbortController();
-	token.onCancellationRequested(() => {
-		abortController.abort();
-	});
-	return abortController.signal;
+  const abortController = new AbortController();
+  token.onCancellationRequested(() => {
+    abortController.abort();
+  });
+  return abortController.signal;
 }
