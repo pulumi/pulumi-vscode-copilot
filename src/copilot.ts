@@ -220,15 +220,16 @@ export class Handler implements vscode.ChatFollowupProvider {
             "```" + msg.content.language + "\n" + msg.content.code + "\n```";
           stream.markdown(block);
 
-          const templateUrl = api.templateUrl(
-            response.conversationId,
-            msg.content
-          );
-          stream.button({
-            command: CREATE_PROJECT_COMMAND_ID,
-            title: vscode.l10n.t("Create Project"),
-            arguments: [templateUrl],
-          });
+          // FUTURE: implement template support
+          // const templateUrl = api.templateUrl(
+          //   response.conversationId,
+          //   msg.content
+          // );
+          // stream.button({
+          //   command: CREATE_PROJECT_COMMAND_ID,
+          //   title: vscode.l10n.t("Create Project"),
+          //   arguments: [templateUrl],
+          // });
           break;
         }
       }
