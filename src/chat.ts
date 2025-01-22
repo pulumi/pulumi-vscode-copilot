@@ -1,4 +1,3 @@
-import winston from "winston";
 import * as vscode from 'vscode';
 import axios from 'axios';
 import * as AxiosLogger from 'axios-logger';

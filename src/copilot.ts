@@ -85,7 +85,7 @@ export class Handler implements vscode.ChatFollowupProvider {
         stream: vscode.ChatResponseStream, 
         cancellationToken: vscode.CancellationToken): Promise<CopilotChatResult> {
 
-        var chatState = await this.getChatState(context.history, cancellationToken);
+        const chatState = await this.getChatState(context.history, cancellationToken);
 
         if (request.command === "org") {
             // set the active organization based on the prompt
@@ -120,7 +120,7 @@ export class Handler implements vscode.ChatFollowupProvider {
                 case 1:
                     chatState.orgId = userInfo.organizations[0].name;
                     break;
-                default:
+                default: {
                     // present a pick list to select an organization
                     const selected = await vscode.window.showQuickPick(userInfo.organizations.map(o => ({
                         id: o.githubLogin,
@@ -134,6 +134,7 @@ export class Handler implements vscode.ChatFollowupProvider {
                     }
                     chatState.orgId = selected.id;
                     break;
+                }
             }
             stream.markdown(`*'${chatState.orgId!}' is now the active organization for this conversation.*\n\n`);
         }
@@ -170,7 +171,7 @@ export class Handler implements vscode.ChatFollowupProvider {
                 case 'status':
                     stream.progress(msg.content);
                     break;
-                case 'program':
+                case 'program': {
                     const block = "```" + msg.content.language + "\n" + msg.content.code + "\n```";
                     stream.markdown(block);
 
@@ -181,6 +182,7 @@ export class Handler implements vscode.ChatFollowupProvider {
                         arguments: [templateUrl]
                     });
                     break;
+                }
             }
         }
 
@@ -194,6 +196,7 @@ export class Handler implements vscode.ChatFollowupProvider {
         };
     }
 
+    /*eslint no-unused-vars: "off"*/
     provideFollowups(result: CopilotChatResult, context: vscode.ChatContext, token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatFollowup[]> {
         if (!result.metadata?.orgId) {
             // return follow-ups to select an organization
