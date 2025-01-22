@@ -1,22 +1,27 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
+/**
+ * ESLint configuration for the project.
+ * 
+ * See https://eslint.style and https://typescript-eslint.io for additional linting options.
+ */
+// @ts-check
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
 
-
-/** @type {import('eslint').Linter.Config[]} */
-export default [
-  {
-    files: ["**/*.{js,mjs,cjs,ts}"]
-  },
-  {
-    languageOptions: { globals: globals.node }
-  },
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
-  {
-    rules: {
-      'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
-    },
-  },
-];
+export default tseslint.config(
+	{
+		ignores: [
+			'.vscode-test',
+			'out',
+			'examples',
+		]
+	},
+	js.configs.recommended,
+	...tseslint.configs.recommended,
+	...tseslint.configs.stylistic,
+	{
+		rules: {
+			'@typescript-eslint/no-empty-function': 'off',
+			'@typescript-eslint/no-unused-vars': 'off',
+		}
+	}
+);

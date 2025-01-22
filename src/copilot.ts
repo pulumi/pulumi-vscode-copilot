@@ -18,14 +18,14 @@ export interface CopilotChatResult extends vscode.ChatResult {
 }
 
 // the current state of a conversation based on the chat history
-type ConversationState = {
+interface ConversationState {
   user: chat.User;
   orgId?: string;
   conversationId?: string;
 };
 
 export class TokenProvider implements chat.AuthenticationTokenProvider {
-  private forceNewSession: boolean = false;
+  private forceNewSession = false;
   private detail?: string;
 
   async request(): Promise<chat.AuthenticationToken | undefined> {
@@ -271,7 +271,7 @@ export class Handler implements vscode.ChatFollowupProvider {
 
   // getChatState recovers the chat state (conversation-id, connection-id) from the chat history
   private async getChatState(
-    history: ReadonlyArray<vscode.ChatRequestTurn | vscode.ChatResponseTurn>,
+    history: readonly (vscode.ChatRequestTurn | vscode.ChatResponseTurn)[],
     cancellationToken: vscode.CancellationToken
   ): Promise<ConversationState> {
     const lastResponse = [...history].reverse().find((h) => {
