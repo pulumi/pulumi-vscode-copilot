@@ -24,6 +24,10 @@
         "description": "Example: a static website on AWS behind a CDN.",
         "isSticky": true,
         "commands": [
+          {
+            "name": "org",
+            "description": "Set the organization context for Pulumi Copilot"
+          }
         ]
       }
     ],
@@ -60,6 +64,8 @@
     "@yarnpkg/fslib": "^3.1.1",
     "@yarnpkg/libzip": "^3.1.0",
     "ai": "3.0.18",
+    "axios": "^1.7.9",
+    "axios-logger": "^2.8.1",
     "javascript-petname": "^1.2.0",
     "tmp": "^0.2.3",
     "unzipper": "^0.12.3",

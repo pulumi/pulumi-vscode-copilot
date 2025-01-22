@@ -4,35 +4,56 @@
 import * as vscode from 'vscode';
 import * as chat from './chat';
 import * as winston from 'winston';
+import * as config from './config';
 import { PULUMIPUS_PARTICIPANT_ID } from './consts';
 import { CREATE_PROJECT_COMMAND_ID } from './consts';
 
-interface IPulumiChatResult extends vscode.ChatResult {
+// metadata to be associated with the response, to be persisted across turns
+export interface CopilotChatResult extends vscode.ChatResult {
     metadata: {
+        user: chat.User,
         command?: string;
-        conversationId: string,
+        conversationId?: string,
+        orgId?: string;
     }
 }
 
-// interface CopilotContext {
-//     organizationId: string;
-// }
-
-type ChatState = {
-    // orgId?: string,
-    conversationId: string,
+// the current state of a conversation based on the chat history
+type ConversationState = {
+    user: chat.User,
+    orgId?: string,
+    conversationId?: string,
 };
 
-// export async function createAgent(context: vscode.ExtensionContext, logger: winston.Logger): Promise<Agent> {
+export class TokenProvider implements chat.AuthenticationTokenProvider {
+    private forceNewSession: boolean = false;
+    private detail?: string;
+    
+    async request(): Promise<chat.AuthenticationToken | undefined> {
+        // obtain an access token, interactively if necessary
+        const session = await vscode.authentication.getSession("pulumi", [], {
+            ...this.forceNewSession ? {forceNewSession: {detail: this.detail}} : {createIfNone: true}
+        });
+        this.forceNewSession = false;
+        if (!session) {
+            return undefined;
+        }
+        return {
+            accessToken: session.accessToken,
+        };
+    }
+
+    invalidate(opts?: chat.AuthenticationTokenInvalidateOptions) {
+        this.forceNewSession = true;
+        this.detail = opts?.detail;
+    }
+}
+
 export function activate(context: vscode.ExtensionContext, logger: winston.Logger) {
 
     // Configure the API client
     const userAgent = `pulumi-vscode-copilot/${context.extension.packageJSON.version}`;
-    const tokenProvider = async () => {
-        const session = await vscode.authentication.getSession("pulumi", [], { createIfNone: true });
-        return session?.accessToken;
-    };
-    const client = new chat.Client('https://api.pulumi.com/api/ai/chat/preview', userAgent, tokenProvider, logger);
+    const client = new chat.Client(config.apiUrl(), userAgent, new TokenProvider());
 
     // create the chat message handler
     const handler = new Handler(logger, client);
@@ -62,25 +83,79 @@ export class Handler implements vscode.ChatFollowupProvider {
         request: vscode.ChatRequest, 
         context: vscode.ChatContext, 
         stream: vscode.ChatResponseStream, 
-        token: vscode.CancellationToken): Promise<IPulumiChatResult> {
+        cancellationToken: vscode.CancellationToken): Promise<CopilotChatResult> {
 
-        var chatState = await this.getChatState(context.history);
+        var chatState = await this.getChatState(context.history, cancellationToken);
 
-        // Send prompt to Pulumi Copilot
-        this.logger.info(`Sending a request to Pulumi Copilot REST API`, { prompt: request.prompt, conversationId: chatState?.conversationId });
+        if (request.command === "org") {
+            // set the active organization based on the prompt
+            // FUTURE: use language model to determine the organization from the prompt
+            let orgId : string | undefined = request.prompt.trim(); 
+            if (!orgId) {
+                // clear the active organization
+                orgId = undefined;
+            } else {
+                if (!chatState.user.organizations.find(o => o.githubLogin === orgId)) {
+                    throw new Error(`'${orgId}' is not an organization associated with your account.`);
+                }
+                stream.markdown(`*'${orgId}' is now the active organization for this conversation.*\n`);
+            }
+            return {
+                metadata: {
+                    user: chatState.user,
+                    command: request.command,
+                    orgId: orgId,
+                    conversationId: '', // clear the conversation id because a conversation may not span organizations
+                }
+            };
+        }
+
+        if (!chatState.orgId) {
+            // we need to select an organization before sending a prompt,
+            // because each Pulumi Copilot conversation is tied to a specific organization.
+            const userInfo = await this.client.getUserInfo(cancellationToken);
+            switch(userInfo.organizations.length) {
+                case 0:
+                    throw new Error("You are not a member of any Pulumi organizations.");
+                case 1:
+                    chatState.orgId = userInfo.organizations[0].name;
+                    break;
+                default:
+                    // present a pick list to select an organization
+                    const selected = await vscode.window.showQuickPick(userInfo.organizations.map(o => ({
+                        id: o.githubLogin,
+                        label: o.name,
+                        iconPath: o.avatarUrl.length > 0 ? vscode.Uri.parse(o.avatarUrl) : undefined,
+                    } satisfies vscode.QuickPickItem & {id: string})), {
+                        title: "Select a Pulumi organization",
+                    });
+                    if (!selected) {
+                        throw new Error("Select a Pulumi organization to use Pulumi Copilot.");
+                    }
+                    chatState.orgId = selected.id;
+                    break;
+            }
+            stream.markdown(`*'${chatState.orgId!}' is now the active organization for this conversation.*\n\n`);
+        }
+
+        if (!request.prompt) {
+            throw new Error(vscode.l10n.t("Please specify a question when using this command.\n\nUsage: @pulumi Ask a question about your cloud infrastructure."));
+        }
         
+        // Send prompt to Pulumi Copilot
+        this.logger.info(`Sending a request to Pulumi Copilot REST API`, { prompt: request.prompt, orgId: chatState.orgId!, conversationId: chatState.conversationId });
         const response = await this.client.sendPrompt({
             state: {
                 client: {
                     cloudContext: {
-                    orgId: "pulumi",
-                    url: "https://app.pulumi.com",
+                        orgId: chatState.orgId!,
+                        url: config.consoleUrl(),
                     },
                 },
             },
-            conversationId: chatState?.conversationId,
-            query: request.prompt ?? "Hello",
-        }, token);
+            conversationId: chatState.conversationId,
+            query: request.prompt,
+        }, cancellationToken);
         this.logger.info(`Got a response from Pulumi Copilot`, { conversationId: response.conversationId });
 
         // process each message
@@ -90,7 +165,7 @@ export class Handler implements vscode.ChatFollowupProvider {
                     stream.markdown(msg.content);
                     break;
                 case 'trace':
-                    this.logger.info('Copilot trace message', { content: msg.content });
+                    this.logger.info('Copilot trace', { message: msg.content });
                     break;
                 case 'status':
                     stream.progress(msg.content);
@@ -111,38 +186,49 @@ export class Handler implements vscode.ChatFollowupProvider {
 
         return {
             metadata: {
+                user: chatState.user,
                 command: '',
+                orgId: chatState.orgId,
                 conversationId: response.conversationId,
             }
         };
     }
 
-    provideFollowups(result: vscode.ChatResult, context: vscode.ChatContext, token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatFollowup[]> {
+    provideFollowups(result: CopilotChatResult, context: vscode.ChatContext, token: vscode.CancellationToken): vscode.ProviderResult<vscode.ChatFollowup[]> {
+        if (!result.metadata?.orgId) {
+            // return follow-ups to select an organization
+            return result.metadata.user.organizations.map(o => ({
+                command: 'org',
+                prompt: o.githubLogin,
+                label: `/org ${o.githubLogin}`,
+            } satisfies vscode.ChatFollowup));
+        }
 
-        // for example, given a program response: "convert to another language"
+        // for example, given a program response, a follow-up might be "convert to another language"
         return [];
-
-        // if (result.metadata?.command === 'new') {
-        // 	return [];
-        // }
-        // return [{
-        // 	prompt: "",
-        // 	label: vscode.l10n.t('Create a new Pulumi project'),
-        // 	command: 'new'
-        // } satisfies vscode.ChatFollowup];
     }
 
     // getChatState recovers the chat state (conversation-id, connection-id) from the chat history
-    private async getChatState(history: ReadonlyArray<vscode.ChatRequestTurn | vscode.ChatResponseTurn>): Promise<ChatState | undefined> {
+    private async getChatState(
+        history: ReadonlyArray<vscode.ChatRequestTurn | vscode.ChatResponseTurn>,
+        cancellationToken: vscode.CancellationToken): Promise<ConversationState> {
+
         const lastResponse = [...history].reverse().find(h => {
             return h instanceof vscode.ChatResponseTurn && h.participant === PULUMIPUS_PARTICIPANT_ID;
         }) as vscode.ChatResponseTurn;
+
         if (!lastResponse || !lastResponse.result.metadata) {
-            return undefined;
+            const userInfo = await this.client.getUserInfo(cancellationToken);
+            return {
+                user: userInfo,
+            };
         }
 
+        const result = lastResponse.result as CopilotChatResult;
         return {
-            conversationId: lastResponse.result.metadata.conversationId,
+            user: result.metadata.user,
+            orgId: result.metadata.orgId,
+            conversationId: result.metadata.conversationId,
         };
     }
 }

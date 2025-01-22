@@ -7,6 +7,7 @@ import * as winston from 'winston';
 import * as agent from './copilot';
 import { LogOutputChannelTransport } from 'winston-transport-vscode';
 import { CREATE_PROJECT_COMMAND_ID } from './consts';
+import * as AxiosLogger from 'axios-logger';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -23,6 +24,9 @@ export function activate(context: vscode.ExtensionContext) {
 		levels: LogOutputChannelTransport.config.levels,
 		format: LogOutputChannelTransport.format(),
 		transports: [new LogOutputChannelTransport({ outputChannel: logChannel })],
+	});
+	AxiosLogger.setGlobalConfig({
+		logger: logger.info.bind(logger),
 	});
 
 	// Configure Pulumi Copilot as a chat participant.
