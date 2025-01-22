@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import * as chat from "./chat";
+import * as api from "./api";
 import * as winston from "winston";
 import * as config from "./config";
 import { PULUMIPUS_PARTICIPANT_ID } from "./consts";
@@ -10,7 +10,7 @@ import { CREATE_PROJECT_COMMAND_ID } from "./consts";
 // metadata to be associated with the response, to be persisted across turns
 export interface CopilotChatResult extends vscode.ChatResult {
   metadata: {
-    user: chat.User;
+    user: api.User;
     command?: string;
     conversationId?: string;
     orgId?: string;
@@ -19,16 +19,16 @@ export interface CopilotChatResult extends vscode.ChatResult {
 
 // the current state of a conversation based on the chat history
 interface ConversationState {
-  user: chat.User;
+  user: api.User;
   orgId?: string;
   conversationId?: string;
 };
 
-export class TokenProvider implements chat.AuthenticationTokenProvider {
+export class TokenProvider implements api.AuthenticationTokenProvider {
   private forceNewSession = false;
   private detail?: string;
 
-  async request(): Promise<chat.AuthenticationToken | undefined> {
+  async request(): Promise<api.AuthenticationToken | undefined> {
     // obtain an access token, interactively if necessary
     const session = await vscode.authentication.getSession("pulumi", [], {
       ...(this.forceNewSession
@@ -44,7 +44,7 @@ export class TokenProvider implements chat.AuthenticationTokenProvider {
     };
   }
 
-  invalidate(opts?: chat.AuthenticationTokenInvalidateOptions) {
+  invalidate(opts?: api.AuthenticationTokenInvalidateOptions) {
     this.forceNewSession = true;
     this.detail = opts?.detail;
   }
@@ -56,7 +56,7 @@ export function activate(
 ) {
   // Configure the API client
   const userAgent = `pulumi-vscode-copilot/${context.extension.packageJSON.version}`;
-  const client = new chat.Client(
+  const client = new api.Client(
     config.apiUrl(),
     userAgent,
     new TokenProvider()
@@ -82,9 +82,9 @@ export function activate(
 
 export class Handler implements vscode.ChatFollowupProvider {
   private readonly logger: winston.Logger;
-  private readonly client: chat.Client;
+  private readonly client: api.Client;
 
-  constructor(logger: winston.Logger, client: chat.Client) {
+  constructor(logger: winston.Logger, client: api.Client) {
     this.logger = logger;
     this.client = client;
   }
@@ -223,7 +223,7 @@ export class Handler implements vscode.ChatFollowupProvider {
             "```" + msg.content.language + "\n" + msg.content.code + "\n```";
           stream.markdown(block);
 
-          const templateUrl = chat.templateUrl(
+          const templateUrl = api.templateUrl(
             response.conversationId,
             msg.content
           );
