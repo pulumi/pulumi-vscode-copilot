@@ -166,9 +166,6 @@ export class Handler implements vscode.ChatFollowupProvider {
           break;
         }
       }
-      stream.markdown(
-        `*'${chatState.orgId!}' is now the active organization for this conversation.*\n\n`
-      );
     }
 
     if (!request.prompt) {
