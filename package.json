@@ -2,16 +2,25 @@
   "name": "pulumi-vscode-copilot",
   "publisher": "pulumi",
   "displayName": "pulumi-vscode-copilot",
-  "description": "Pulumi Copilot",
+  "description": "Pulumi Copilot for Visual Studio Code",
+  "license": "Apache-2.0",
   "version": "0.2.0",
   "engines": {
     "vscode": "^1.91.0"
   },
+  "bugs": {
+    "url": "https://github.com/pulumi/pulumi-vscode-copilot/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pulumi/pulumi-vscode-copilot.git"
+  },
+  "homepage": "https://github.com/pulumi/pulumi-vscode-copilot/blob/main/README.md",
   "extensionDependencies": [
     "github.copilot-chat"
   ],
   "categories": [
-    "Other"
+    "AI"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
