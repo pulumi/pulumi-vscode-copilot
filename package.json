@@ -28,6 +28,35 @@
             "name": "org",
             "description": "Set the organization context for Pulumi Copilot"
           }
+        ],
+        "disambiguation": [
+          {
+            "category": "pulumi",
+            "description": "The user wants to write, explain, or fix Pulumi program code.",
+            "examples": [
+              "Create a Pulumi program to create a static website on AWS",
+              "Explain to me this block of Pulumi code",
+              "Convert my Pulumi code to another programming language"
+            ]
+          },
+          {
+            "category": "tf",
+            "description": "The user wants to write or explain Terraform code.",
+            "examples": [
+              "Explain this block of Terraform code",
+              "Convert my Terraform code to pulumi code"
+            ]
+          },
+          {
+            "category": "cloud",
+            "description": "The user wants to write cloud infrastructure code for AWS, GCP, Azure or other public cloud.",
+            "examples": [
+              "Create code to deploy a cloud storage bucket",
+              "Create code to provision cloud networking resources",
+              "Create code to deploy a website",
+              "Create code to deploy a Kubernetes cluster"
+            ]
+          }
         ]
       }
     ],
