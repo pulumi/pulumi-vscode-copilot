@@ -175,8 +175,9 @@ export class Handler implements vscode.ChatFollowupProvider {
         )
       );
     }
-
-    // Send prompt to Pulumi Copilot
+    const query = await this.generateQuery(request);
+    
+    // Send query to Pulumi Copilot
     this.logger.info(`Sending a request to Pulumi Copilot REST API`, {
       prompt: request.prompt,
       orgId: chatState.orgId!,
@@ -193,7 +194,7 @@ export class Handler implements vscode.ChatFollowupProvider {
           },
         },
         conversationId: chatState.conversationId,
-        query: request.prompt,
+        query: query,
       },
       cancellationToken
     );
@@ -245,11 +246,43 @@ export class Handler implements vscode.ChatFollowupProvider {
     };
   }
 
-  /*eslint no-unused-vars: "off"*/
+  // generateQuery produces a query string inclusive of the user's prompt and referenced code blocks.
+  async generateQuery(request: vscode.ChatRequest): Promise<string> {
+    const sb = []
+    sb.push(request.prompt);
+
+    const pushCodeBlock = (code: string, location?: string, modelDescription?: string) => {
+      sb.push('\n');
+      if (modelDescription) {
+        sb.push("# " + modelDescription);
+      }
+      if (location) {
+        sb.push("# " + location);
+      }
+      sb.push('```');
+      sb.push(code);
+      sb.push('```');
+    }
+
+    for (const ref of request.references) {
+      if (typeof ref.value === 'string') {
+        pushCodeBlock(ref.value, undefined, ref.modelDescription);
+      } else if (ref.value instanceof vscode.Uri) {
+        const doc = await vscode.workspace.openTextDocument(ref.value);
+        pushCodeBlock(doc.getText(), ref.value.toString(), ref.modelDescription);
+      } else if (ref.value instanceof vscode.Location) {
+        const doc = await vscode.workspace.openTextDocument(ref.value.uri);
+        pushCodeBlock(doc.getText(ref.value.range), ref.value.uri.toString(), ref.modelDescription);
+      }
+    }
+
+    return sb.join("\n")
+  }
+
   provideFollowups(
     result: CopilotChatResult,
-    context: vscode.ChatContext,
-    token: vscode.CancellationToken
+    _context: vscode.ChatContext,
+    _token: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.ChatFollowup[]> {
     if (!result.metadata?.orgId) {
       // return follow-ups to select an organization
