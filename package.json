@@ -8,8 +8,7 @@
     "vscode": "^1.88.0"
   },
   "extensionDependencies": [
-    "github.copilot-chat",
-    "arcanis.vscode-zipfs"
+    "github.copilot-chat"
   ],
   "categories": [
     "Other"
@@ -22,12 +21,41 @@
         "id": "pulumi-vscode-copilot.pulumipus",
         "fullName": "Pulumi Copilot",
         "name": "pulumi",
-        "description": "What cloud infrastructure would you like to build?",
+        "description": "Example: a static website on AWS behind a CDN.",
         "isSticky": true,
         "commands": [
           {
-            "name": "new",
-            "description": "Create a new Pulumi program"
+            "name": "org",
+            "description": "Set the organization context for Pulumi Copilot"
+          }
+        ],
+        "disambiguation": [
+          {
+            "category": "pulumi",
+            "description": "The user wants to write, explain, or fix Pulumi program code.",
+            "examples": [
+              "Create a Pulumi program to create a static website on AWS",
+              "Explain to me this block of Pulumi code",
+              "Convert my Pulumi code to another programming language"
+            ]
+          },
+          {
+            "category": "tf",
+            "description": "The user wants to write or explain Terraform code.",
+            "examples": [
+              "Explain this block of Terraform code",
+              "Convert my Terraform code to pulumi code"
+            ]
+          },
+          {
+            "category": "cloud",
+            "description": "The user wants to write cloud infrastructure code for AWS, GCP, Azure or other public cloud.",
+            "examples": [
+              "Create code to deploy a cloud storage bucket",
+              "Create code to provision cloud networking resources",
+              "Create code to deploy a website",
+              "Create code to deploy a Kubernetes cluster"
+            ]
           }
         ]
       }
@@ -35,7 +63,7 @@
     "commands": [
       {
         "command": "pulumi-vscode-copilot.createProject",
-        "title": "Pulumi AI: Create Project"
+        "title": "Pulumi Copilot: Create Project"
       }
     ]
   },
@@ -44,20 +72,24 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@eslint/js": "^9.18.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "18.x",
     "@types/vscode": "^1.96.0",
-    "@typescript-eslint/eslint-plugin": "^8.20.0",
-    "@typescript-eslint/parser": "^8.20.0",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
     "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.18.0",
     "glob": "^11.0.1",
+    "globals": "^15.14.0",
     "mocha": "^11.0.1",
-    "typescript": "^5.7.3"
+    "prettier": "3.4.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.21.0"
   },
   "dependencies": {
     "@types/tmp": "^0.2.6",
@@ -65,6 +97,8 @@
     "@yarnpkg/fslib": "^3.1.1",
     "@yarnpkg/libzip": "^3.1.0",
     "ai": "3.0.18",
+    "axios": "^1.7.9",
+    "axios-logger": "^2.8.1",
     "javascript-petname": "^1.2.0",
     "tmp": "^0.2.3",
     "unzipper": "^0.12.3",
