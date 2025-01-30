@@ -19,18 +19,27 @@ This extension requires [GitHub Copilot](https://github.com/features/copilot?edi
 
 ## Getting Started
 
-### Build and Run The Extension
+### Install the Extension
 
-This extension is not yet published and must be built from source. See [CONTRIBUTING.md#running-the-extension](CONTRIBUTING.md#running-the-extension).
+1. Get a free Pulumi account at http://app.pulumi.com/.
+2. Install and configure [GitHub Copilot](https://code.visualstudio.com/docs/copilot/setup).
+3. Install [Pulumi Copilot](https://marketplace.visualstudio.com/items?itemName=pulumi.pulumi-vscode-copilot) using Visual Studio Marketplace.
 
 ### Open the Chat View
 
-Open the chat view and start a conversation with the `@pulumi` chat participant. Some questions to try:
+Open the Chat view and start a conversation with the `@pulumi` chat participant. If you haven't already,
+you'll be asked to login to Pulumi Cloud.  You may be asked to select an organization if your Pulumi account
+is associated with multiple organizations.
+
+Pulumi Copilot uses local project information and account information to answer questions. Here's some questions to try:
 
 1. "@pulumi whoami" - demonstrates how Copilot uses organization context to answer questions.
 2. "@pulumi explain this" - do this with an open file, to see how Copilot understands code references.
 
 ## Extension Settings
+
+This extension uses various configuration settings from the
+[Pulumi Tools](https://marketplace.visualstudio.com/items?itemName=pulumi.pulumi-vscode-copilot) extension.
 
 ## Releases
 
