@@ -2,7 +2,7 @@
   "name": "pulumi-vscode-copilot",
   "displayName": "Pulumi Copilot",
   "description": "Pulumi Copilot for Visual Studio Code",
-  "version": "0.3.0-0",
+  "version": "0.3.0",
   "engines": {
     "vscode": "^1.91.0"
   },
@@ -73,8 +73,7 @@
         ]
       }
     ],
-    "commands": [
-    ]
+    "commands": []
   },
   "scripts": {
     "lint": "eslint",
