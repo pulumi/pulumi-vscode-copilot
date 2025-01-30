@@ -19,7 +19,6 @@ import * as api from "./api";
 import * as winston from "winston";
 import * as config from "./config";
 import { PULUMIPUS_PARTICIPANT_ID } from "./consts";
-import { CREATE_PROJECT_COMMAND_ID } from "./consts";
 
 // metadata to be associated with the response, to be persisted across turns
 export interface CopilotChatResult extends vscode.ChatResult {

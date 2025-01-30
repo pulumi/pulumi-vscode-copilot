@@ -12,5 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export const CREATE_PROJECT_COMMAND_ID = "pulumi-vscode-copilot.createProject";
 export const PULUMIPUS_PARTICIPANT_ID = "pulumi-vscode-copilot.pulumipus";
