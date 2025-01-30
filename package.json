@@ -1,9 +1,10 @@
 {
   "name": "pulumi-vscode-copilot",
   "publisher": "pulumi",
-  "displayName": "pulumi-vscode-copilot",
-  "description": "Pulumi Copilot",
+  "displayName": "Pulumi Copilot",
+  "description": "Pulumi Copilot for Visual Studio Code",
   "version": "0.0.1",
+  "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.88.0"
   },
@@ -11,6 +12,7 @@
     "github.copilot-chat"
   ],
   "categories": [
+    "AI",
     "Other"
   ],
   "activationEvents": [],
