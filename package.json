@@ -8,7 +8,7 @@
   },
   "publisher": "pulumi",
   "license": "Apache-2.0",
-  "icon": "pulumi-copilot-logo.png",
+  "icon": "pulumi-logo.png",
   "bugs": {
     "url": "https://github.com/pulumi/pulumi-vscode-copilot/issues"
   },
