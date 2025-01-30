@@ -1,21 +1,32 @@
 {
   "name": "pulumi-vscode-copilot",
-  "publisher": "pulumi",
   "displayName": "Pulumi Copilot",
   "description": "Pulumi Copilot for Visual Studio Code",
   "version": "0.0.1",
-  "license": "Apache-2.0",
   "engines": {
-    "vscode": "^1.88.0"
+    "vscode": "^1.91.0"
   },
+  "publisher": "pulumi",
+  "license": "Apache-2.0",
+  "icon": "pulumi-copilot-logo.png",
+  "bugs": {
+    "url": "https://github.com/pulumi/pulumi-vscode-copilot/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pulumi/pulumi-vscode-copilot.git"
+  },
+  "homepage": "https://github.com/pulumi/pulumi-vscode-copilot/blob/main/README.md",
   "extensionDependencies": [
-    "github.copilot-chat"
+    "github.copilot-chat",
+    "pulumi.pulumi-vscode-tools"
   ],
   "categories": [
-    "AI",
-    "Other"
+    "AI"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onChatParticipant:pulumi"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "chatParticipants": [
@@ -81,7 +92,7 @@
     "@eslint/js": "^9.18.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "18.x",
-    "@types/vscode": "^1.96.0",
+    "@types/vscode": "^1.91.0",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
     "@vscode/test-electron": "^2.4.1",
