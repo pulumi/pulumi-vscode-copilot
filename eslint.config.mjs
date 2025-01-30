@@ -13,6 +13,7 @@ export default tseslint.config(
 			'.vscode-test',
 			'out',
 			'examples',
+			'esbuild.js'
 		]
 	},
 	js.configs.recommended,

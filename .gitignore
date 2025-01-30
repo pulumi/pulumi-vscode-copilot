@@ -3,4 +3,6 @@ dist
 node_modules
 .vscode-test/
 *.vsix
-hack/
+.yalc/
+yalc.lock
+.DS_Store
