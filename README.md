@@ -9,6 +9,12 @@ Pulumi Copilot is an AI-powered conversational assistant that seamlessly integra
 - Troubleshoot errors and optimize configurations
 - Author and deploy Pulumi IaC more effectively
 
+This extension brings Pulumi Copilot into your IDE to:
+
+- Suggest infrastructure code based on a natural language prompt like "create an AKS cluster in the East US region."
+- Answer questions about infrastructure managed by Pulumi like "what is my oldest MySQL DB?" and "has this code been deployed?"
+- Translate infrastructure code from other tools (YAML, HCL, JSON, bicep) into programming languages (TypeScript, .NET, Java, Python, Golang)
+
 _Note_: this extension is in public beta. If you have suggestions for features or find bugs, please open an issue.
 
 ![Demo](images/docs/copilot_demo.gif)
@@ -19,7 +25,7 @@ _Note_: this extension is in public beta. If you have suggestions for features o
 
 ## Features
 
-- A `@pulumi` chat participant for chatting with Pulumi Copilot.
+- A `@pulumi` [chat participant](https://code.visualstudio.com/docs/copilot/getting-started-chat#_use-chat-participants) for GitHub Copilot Chat
 - A `/org` command to change the current organization for the conversation.
 
 ## Requirements
