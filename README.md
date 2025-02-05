@@ -19,7 +19,7 @@ _Note_: this extension is in public beta. If you have suggestions for features o
 
 ## Features
 
-- A `@pulumi` chat participant for chatting with Pulumi Copilot 
+- A `@pulumi` chat participant for chatting with Pulumi Copilot.
 - A `/org` command to change the current organization for the conversation.
 
 ## Requirements
