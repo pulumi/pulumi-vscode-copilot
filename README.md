@@ -1,8 +1,23 @@
 # Pulumi Copilot Chat Extension for Visual Studio Code
 
-The extension for chatting with Pulumi Copilot using VS Code's [Copilot Chat](https://code.visualstudio.com/docs/copilot/copilot-chat) experience.
+The extension for chatting with Pulumi Copilot using [Copilot Chat](https://code.visualstudio.com/docs/copilot/copilot-chat) in Visual Studio Code.
+
+Pulumi Copilot is an AI-powered conversational assistant that seamlessly integrates with Pulumi Cloud, helping users:
+
+- Explore and manage cloud infrastructure
+- Gain insights into resources, policies, and deployments
+- Troubleshoot errors and optimize configurations
+- Author and deploy Pulumi IaC more effectively
+
+This extension brings Pulumi Copilot into your IDE to:
+
+- Suggest infrastructure code based on a natural language prompt like "create an AKS cluster in the East US region."
+- Answer questions about infrastructure managed by Pulumi like "what is my oldest MySQL DB?" and "has this code been deployed?"
+- Translate infrastructure code from other tools (YAML, HCL, JSON, bicep) into programming languages (TypeScript, .NET, Java, Python, Golang)
 
 _Note_: this extension is in public beta. If you have suggestions for features or find bugs, please open an issue.
+
+![Demo](images/docs/copilot_demo.gif)
 
 ## System Requirements
 
@@ -10,12 +25,14 @@ _Note_: this extension is in public beta. If you have suggestions for features o
 
 ## Features
 
-- A `@pulumi` chat participant for chatting with Pulumi Copilot.
+- A `@pulumi` [chat participant](https://code.visualstudio.com/docs/copilot/getting-started-chat#_use-chat-participants) for GitHub Copilot Chat
 - A `/org` command to change the current organization for the conversation.
 
 ## Requirements
 
 This extension requires [GitHub Copilot](https://github.com/features/copilot?editor=vscode). To access GitHub Copilot, an active GitHub Copilot license is required. You can read more about GitHub's business and individual offerings at [github.com/features/copilot](https://github.com/features/copilot).
+
+This extension requires a [Pulumi Cloud](http://app.pulumi.com/) account.
 
 ## Getting Started
 
@@ -35,6 +52,7 @@ Pulumi Copilot uses local project information and account information to answer 
 
 1. "@pulumi whoami" - demonstrates how Copilot uses organization context to answer questions.
 2. "@pulumi explain this" - do this with an open file, to see how Copilot understands code references.
+3. "@pulumi convert to Pulumi code" - do this with a Terraform configuration or code from another tool.
 
 ## Extension Settings
 
