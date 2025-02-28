@@ -228,7 +228,7 @@ export class Handler implements vscode.ChatFollowupProvider {
     )) {
       switch (msg.kind) {
         case "response":
-          stream.markdown(msg.content);
+          stream.markdown(msg.content.trim() + "\n");
           break;
         case "trace":
           this.logger.info("Copilot trace", { message: msg.content });
