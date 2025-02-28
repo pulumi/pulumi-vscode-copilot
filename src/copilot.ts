@@ -152,7 +152,7 @@ export class Handler implements vscode.ChatFollowupProvider {
     if (!chatState.orgId) {
       // we need to select an organization before sending a prompt,
       // because each Pulumi Copilot conversation is tied to a specific organization.
-      const userInfo = await this.client.getUserInfo(cancellationToken);
+      const userInfo = await this.client.getUserInfo({signal: tokenToSignal(cancellationToken)});
       switch (userInfo.organizations.length) {
         case 0:
           throw new Error("You are not a member of any Pulumi organizations.");
@@ -216,7 +216,7 @@ export class Handler implements vscode.ChatFollowupProvider {
         conversationId: chatState.conversationId,
         query: query,
       },
-      cancellationToken
+      {signal: tokenToSignal(cancellationToken)}
     );
     this.logger.info(`Got a response from Pulumi Copilot`, {
       conversationId: response.conversationId,
@@ -333,7 +333,7 @@ export class Handler implements vscode.ChatFollowupProvider {
     }) as vscode.ChatResponseTurn;
 
     if (!lastResponse || !lastResponse.result.metadata) {
-      const userInfo = await this.client.getUserInfo(cancellationToken);
+      const userInfo = await this.client.getUserInfo({signal: tokenToSignal(cancellationToken)});
       return {
         user: userInfo,
       };
@@ -346,4 +346,12 @@ export class Handler implements vscode.ChatFollowupProvider {
       conversationId: result.metadata.conversationId,
     };
   }
+}
+
+function tokenToSignal(token: vscode.CancellationToken): AbortSignal {
+  const abortController = new AbortController();
+  token.onCancellationRequested(() => {
+    abortController.abort();
+  });
+  return abortController.signal;
 }
