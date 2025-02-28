@@ -68,15 +68,18 @@ export function activate(
   logger: winston.Logger
 ) {
   // Configure the API client
+  const tokenProvider = new TokenProvider();
   const userAgent = `pulumi-vscode-copilot/${context.extension.packageJSON.version}`;
-  const client = new api.Client(
-    config.apiUrl(),
-    userAgent,
-    new TokenProvider()
-  );
+  let client = new api.Client(config.apiUrl(), userAgent, tokenProvider);
 
   // create the chat message handler
   const handler = new Handler(logger, client);
+  vscode.workspace.onDidChangeConfiguration(async (e) => {
+    if (e.affectsConfiguration("pulumi.api-url")) {
+      client = new api.Client(config.apiUrl(), userAgent, tokenProvider);
+      handler.setClient(client);
+    }
+  });
 
   // Chat participants appear as top-level options in the chat input
   // when you type `@`, and can contribute sub-commands in the chat input
@@ -95,10 +98,14 @@ export function activate(
 
 export class Handler implements vscode.ChatFollowupProvider {
   private readonly logger: winston.Logger;
-  private readonly client: api.Client;
+  private client: api.Client;
 
   constructor(logger: winston.Logger, client: api.Client) {
     this.logger = logger;
+    this.client = client;
+  }
+
+  public setClient(client: api.Client) {
     this.client = client;
   }
 
