@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Support for client reconfiguration
+- Simplify the client.ts cancellation code
+- Ensure line termination on response message
+
+### Fixed
+
 ## [0.3.0] - 2025-01-30
 
 ### Fixed

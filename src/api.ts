@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as vscode from "vscode";
 import axios from "axios";
 import * as AxiosLogger from "axios-logger";
 
@@ -178,10 +177,14 @@ export class Client {
     );
   }
 
-  async getUserInfo(token: vscode.CancellationToken): Promise<User> {
+  async getUserInfo(
+    opts?: {
+      signal?: axios.GenericAbortSignal
+    }
+  ): Promise<User> {
     try {
       const response = await this.instance.get<User>("/api/user", {
-        signal: tokenToSignal(token),
+        signal: opts?.signal,
       });
       return response.data;
     } catch (err) {
@@ -194,14 +197,16 @@ export class Client {
 
   async sendPrompt(
     request: ChatRequest,
-    token: vscode.CancellationToken
+    opts?: {
+      signal?: axios.GenericAbortSignal
+    }
   ): Promise<ChatResponse> {
     try {
       const response = await this.instance.post<ChatResponse>(
         "/api/ai/chat/preview",
         request,
         {
-          signal: tokenToSignal(token),
+          signal: opts?.signal,
         }
       );
       return response.data;
@@ -224,12 +229,4 @@ export function templateUrl(
   }
   // a legacy URL for demo purposes
   return `https://www.pulumi.com/ai/api/project/859bfc82-d039-4b24-ac02-751e3b4e22f6.zip`;
-}
-
-function tokenToSignal(token: vscode.CancellationToken): AbortSignal {
-  const abortController = new AbortController();
-  token.onCancellationRequested(() => {
-    abortController.abort();
-  });
-  return abortController.signal;
 }
