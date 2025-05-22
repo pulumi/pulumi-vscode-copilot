@@ -157,7 +157,7 @@ export class Handler implements vscode.ChatFollowupProvider {
         case 0:
           throw new Error("You are not a member of any Pulumi organizations.");
         case 1:
-          chatState.orgId = userInfo.organizations[0].name;
+          chatState.orgId = userInfo.organizations[0].githubLogin;
           break;
         default: {
           // present a pick list to select an organization
