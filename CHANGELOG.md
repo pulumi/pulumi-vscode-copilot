@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Use the correct orgid when starting a new chat
+
 ## [0.3.3] - 2025-03-13
 
 ### Fixed
